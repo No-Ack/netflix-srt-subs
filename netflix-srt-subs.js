@@ -263,7 +263,10 @@ function getSubtitleRecords(srtContents) {
 	while(lineNumber < srtLines.length) {
 		// Parse fragment by fragment
 		// We don't need the index, but let's check it as a form of error detection
-		let indexLine = srtLines[lineNumber++].trim();
+		let indexLine = getLineByLineNumber(lineNumber++, srtLines);
+		if (indexLine === null) {
+			continue;
+		}
 		if(!indexLine.match(/\d+/)) {
 			console.log(`Expected fragment index on line ${lineNumber - 1}, but got ${indexLine}`);
 			// Just continue, maybe there is no fragment counts?
@@ -281,7 +284,10 @@ function getSubtitleRecords(srtContents) {
 		}
 
 		// Parse timestamps
-		let timestampLine = srtLines[lineNumber++].trim();
+		let timestampLine = getLineByLineNumber(lineNumber++, srtLines);
+		if (timestampLine === null) {
+			continue;
+		}
 		if(!timestampLine.includes('-->')) {
 			console.log(`Invalid timestamp line. Got: ${timestampLine} on line ${lineNumber - 1}`);
 			// No way to go without this, so skip
@@ -305,8 +311,8 @@ function getSubtitleRecords(srtContents) {
 		// Now parse remaining lines as the subtitle text until we get a blank line
 		let subtitleText = '';
 		while(true) {
-			let line = srtLines[lineNumber++].trim();
-			if(line === '') break;
+			let line = getLineByLineNumber(lineNumber++, srtLines);
+			if(line === '' || line === null) break;
 			// Auto add line breaks
 			if(subtitleText !== '') {
 				subtitleText += '<br>';
@@ -323,6 +329,16 @@ function getSubtitleRecords(srtContents) {
 	}
 
 	return subtitleRecords;
+}
+
+function getLineByLineNumber(lineNumber, srtLines) {
+	const line = srtLines[lineNumber];
+	if (line === undefined) {
+		console.log(`Unexpected end of file at line ${lineNumber}.`);
+		return null;        
+	}
+
+	return line.trim();
 }
 
 /**
